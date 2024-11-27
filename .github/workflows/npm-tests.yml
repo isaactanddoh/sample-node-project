@@ -1,0 +1,120 @@
+# ---------------------------------------------------------------------------------------
+#   @parent     : github workflow
+#   @desc       : test release
+#   @author     : Aetherinox
+#   @url        : https://github.com/Aetherinox
+#
+#   cannot be ran on anything older than NodeJS 16
+# ---------------------------------------------------------------------------------------
+
+name: "🧪 NPM › Tests"
+run-name: "🧪 NPM › Tests"
+
+# ---------------------------------------------------------------------------------------
+#   triggers
+# ---------------------------------------------------------------------------------------
+
+on:
+  workflow_dispatch:
+
+# ---------------------------------------------------------------------------------------
+#   jobs
+# ---------------------------------------------------------------------------------------
+
+jobs:
+    test:
+        name: >-
+          🧪 Tests
+        runs-on: ubuntu-latest
+        timeout-minutes: 60
+        strategy:
+            matrix:
+                node-version: [16.x, 17.x, 18.x, 20.x, 22.x]
+
+        steps:
+
+            # ---------------------------------------------------------------------------------------
+            #   Job > Start
+            # ---------------------------------------------------------------------------------------
+
+            - name: >-
+                ✅ Start
+              id: task_test_start
+              run: |
+                echo "Starting build"
+
+            # ---------------------------------------------------------------------------------------
+            #   Job > Initialize > Checkout
+            # ---------------------------------------------------------------------------------------
+
+            - name: >-
+                ☑️ Checkout
+              id: task_test_checkout
+              uses: actions/checkout@v4
+              with:
+                fetch-depth: 0
+
+            # ---------------------------------------------------------------------------------------
+            #   Job > Use NodeJS
+            #
+            #   Options:
+            #     node-version: ${{ matrix.node-version }}
+            #     node-version: lts/*
+            # ---------------------------------------------------------------------------------------
+
+            - name: >-
+                ⚙️ Setup Node
+              id: task_test_node_setup
+              uses: actions/setup-node@v4
+              with:
+                node-version: ${{ matrix.node-version }}
+
+            # ---------------------------------------------------------------------------------------
+            #   Job > Npm > Install Dependencies
+            # ---------------------------------------------------------------------------------------
+
+            - name: >-
+                ⚙️ Install Dependencies
+              id: task_test_install
+              run: |
+                npm ci
+                npx playwright install --with-deps
+                npm i -D electron-playwright-helpers
+
+            # ---------------------------------------------------------------------------------------
+            #   Job > Run Tests
+            # ---------------------------------------------------------------------------------------
+
+            - name: >-
+                🧪 Run Test
+              id: task_test_run
+              run: |
+                xvfb-run --auto-servernum npx playwright test --trace on
+
+            # ---------------------------------------------------------------------------------------
+            #   Job > Upload Report
+            # ---------------------------------------------------------------------------------------
+
+            - name: >-
+                📋 Generate Report
+              id: task_test_artifacts_report
+              uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                name: Report-${{ matrix.node-version }}
+                path: playwright-report/
+                retention-days: 30
+
+            # ---------------------------------------------------------------------------------------
+            #   Job > Upload Screenshots
+            # ---------------------------------------------------------------------------------------
+
+            - name: >-
+                🔗 Upload Screenshot
+              id: task_test_artifacts_screenshot
+              uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                name: Screenshot-${{ matrix.node-version }}
+                path: test-results/1.png
+                retention-days: 30
